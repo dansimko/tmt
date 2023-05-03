@@ -26,6 +26,7 @@ else:
 # older APIs.
 SUPPORTED_API_VERSIONS = (
     # NEW: added user defined watchdog delay
+    # NEW: added shelving support
     '0.0.56',
     # NEW: no change, fixes issues with validation
     '0.0.55',
@@ -75,6 +76,7 @@ class ArtemisGuestData(tmt.steps.provision.GuestSshData):
     api_version: str = DEFAULT_API_VERSION
 
     # Guest request properties
+    shelfname: Optional[str] = None
     arch: str = DEFAULT_ARCH
     image: Optional[str] = None
     hardware: Optional[Any] = None
@@ -251,6 +253,7 @@ class GuestArtemis(tmt.GuestSsh):
     api_version: str
 
     # Guest request properties
+    shelf: Optional[str]
     arch: str
     image: str
     hardware: Optional[Any]
@@ -311,6 +314,12 @@ class GuestArtemis(tmt.GuestSsh):
             'priority_group': self.priority_group,
             'user_data': self.user_data
             }
+
+        if self.api_version >= '0.0.56':
+            data['shelfname'] = self.shelf
+
+        elif self.shelf:
+            raise ProvisionError(f'API version {self.api_version} does not support shelving.')
 
         if self.pool:
             environment['pool'] = self.pool
@@ -500,6 +509,10 @@ class ProvisionArtemis(tmt.steps.provision.ProvisionPlugin):
                 envvar='ARTEMIS_API_VERSION'
                 ),
             click.option(
+                '--shelfname', metavar='NAME',
+                help='Shelf to use/return the guest to.'
+                ),
+            click.option(
                 '--arch', metavar='ARCH',
                 help='Architecture to provision.'
                 ),
@@ -586,6 +599,7 @@ class ProvisionArtemis(tmt.steps.provision.ProvisionPlugin):
         data = ArtemisGuestData(
             api_url=self.get('api-url'),
             api_version=api_version,
+            shelfname=self.get('shelfname'),
             arch=self.get('arch'),
             image=self.get('image'),
             hardware=self.get('hardware'),
