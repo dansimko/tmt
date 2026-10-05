@@ -320,7 +320,14 @@ class ProvisionConnect(tmt.steps.provision.ProvisionPlugin[ProvisionConnectData]
         if not self.data.guest:
             raise tmt.utils.SpecificationError('Provide a host name or an ip address to connect.')
 
-        if any((self.data.soft_reboot, self.data.systemd_soft_reboot, self.data.hard_reboot)):
+        if any(
+            param is not None
+            for param in (
+                self.data.soft_reboot,
+                self.data.systemd_soft_reboot,
+                self.data.hard_reboot,
+            )
+        ):
             UB_REBOOT_KEYS.assert_is_allowed(self._logger)
 
         data = ConnectGuestData.from_plugin(self)
