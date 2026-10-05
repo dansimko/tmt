@@ -5544,6 +5544,9 @@ def normalize_shell_script(
         return None
 
     if isinstance(value, str):
+        if len(value) == 0:
+            return None
+
         return ShellScript(value)
 
     raise NormalizationError(key_address, value, 'a string')
